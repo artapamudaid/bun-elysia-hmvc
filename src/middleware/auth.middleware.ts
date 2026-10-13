@@ -1,23 +1,12 @@
 // ============================================================
 //  Auth Middleware (JWT-based)
-//  Mirip CI3 MY_Controller + Ion Auth
-//
-//  Usage di routes.ts:
-//    import { authMiddleware, requireAuth, requireRole } from '@/middleware/auth.middleware';
-//
-//    // Semua route di bawah wajib login:
-//    export const adminRoutes = new Elysia({ prefix: '/admin' })
-//        .use(requireAuth)
-//        .get('/', AdminController.index)
-//
-//    // Hanya role tertentu:
-//        .use(requireRole('admin', 'superadmin'))
-//        .get('/settings', AdminController.settings)
+//  Mendukung 2 mode: API (Bearer Token -> JSON) & Web (Cookie -> Redirect)
 // ============================================================
 
 import { Elysia } from 'elysia';
 import { jwt } from '@elysiajs/jwt';
 import { cookie } from '@elysiajs/cookie';
+import { ApiResponse } from '../helpers/response_helper';
 
 // ── Tipe payload JWT ────────────────────────────────────────
 export interface JwtPayload {
@@ -28,8 +17,7 @@ export interface JwtPayload {
 }
 
 // ── Auth Middleware ─────────────────────────────────────────
-// Decode JWT dari cookie dan inject `user` ke context
-// Tambahkan ke app atau route group agar ctx.user tersedia
+// Decode JWT dari Authorization Header (Bearer) atau Cookie
 export const authMiddleware = new Elysia({ name: 'middleware:auth' })
     .use(jwt({
         name:   'jwt',
@@ -37,8 +25,18 @@ export const authMiddleware = new Elysia({ name: 'middleware:auth' })
         exp:    Bun.env.JWT_EXPIRES ?? '7d',
     }))
     .use(cookie())
-    .derive({ as: 'global' }, async ({ jwt: jwtInstance, cookie }) => {
-        const token = cookie?.auth_token?.value ?? null;
+    .derive({ as: 'global' }, async ({ jwt: jwtInstance, cookie, request }) => {
+        // 1. Cek Authorization Header: Bearer <token>
+        const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+        let token: string | null = null;
+
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.substring(7).trim();
+        } else if (cookie?.auth_token?.value) {
+            // 2. Fallback: Cek cookie auth_token
+            token = cookie.auth_token.value;
+        }
+
         let user: JwtPayload | null = null;
 
         if (token) {
@@ -52,12 +50,21 @@ export const authMiddleware = new Elysia({ name: 'middleware:auth' })
             }
         }
 
-        return { user };
+        return { user, token };
     });
 
-// ── Guard: Wajib Login ──────────────────────────────────────
-// Mirip CI3: if (!$this->session->userdata('logged_in')) redirect('/login')
-export const requireAuth = new Elysia({ name: 'guard:auth' })
+// ── Guard API: Wajib Login (Mengembalikan JSON 401) ───────────
+export const requireApiAuth = new Elysia({ name: 'guard:api:auth' })
+    .use(authMiddleware)
+    .onBeforeHandle({ as: 'global' }, ({ user, set }: { user: JwtPayload | null; set: any }) => {
+        if (!user) {
+            set.status = 401;
+            return ApiResponse.unauthorized('Akses ditolak: Token JWT tidak ditemukan, salah, atau telah kedaluwarsa');
+        }
+    });
+
+// ── Guard Web: Wajib Login (Redirect 302 ke /auth/login) ──────
+export const requireWebAuth = new Elysia({ name: 'guard:web:auth' })
     .use(authMiddleware)
     .onBeforeHandle({ as: 'global' }, ({ user, set }: { user: JwtPayload | null; set: any }) => {
         if (!user) {
@@ -69,13 +76,22 @@ export const requireAuth = new Elysia({ name: 'guard:auth' })
         }
     });
 
-// ── Guard: Cek Role ─────────────────────────────────────────
-// Mirip CI3: if ($this->session->userdata('role') !== 'admin') show_error(403)
+// Default alias untuk backward compatibility
+export const requireAuth = requireApiAuth;
+
+// ── Guard: Cek Role (Mendukung mode API & Web) ───────────────
 export function requireRole(...roles: string[]) {
     return new Elysia({ name: `guard:role:${roles.join(',')}` })
         .use(authMiddleware)
-        .onBeforeHandle({ as: 'global' }, ({ user, set }: { user: JwtPayload | null; set: any }) => {
+        .onBeforeHandle({ as: 'global' }, ({ user, set, request }: { user: JwtPayload | null; set: any; request: Request }) => {
+            const isApi = new URL(request.url).pathname.startsWith('/api') ||
+                request.headers.get('accept')?.includes('application/json');
+
             if (!user) {
+                if (isApi) {
+                    set.status = 401;
+                    return ApiResponse.unauthorized('Akses ditolak: Anda harus login terlebih dahulu');
+                }
                 set.status = 302;
                 return new Response(null, {
                     status: 302,
@@ -84,6 +100,10 @@ export function requireRole(...roles: string[]) {
             }
 
             if (!roles.includes(user.role)) {
+                if (isApi) {
+                    set.status = 403;
+                    return ApiResponse.forbidden(`Hak akses ditolak. Diperlukan role: ${roles.join(', ')}`);
+                }
                 set.status = 403;
                 return new Response(
                     `<h1>403 – Akses Ditolak</h1><p>Halaman ini hanya untuk: ${roles.join(', ')}</p>`,
@@ -93,9 +113,7 @@ export function requireRole(...roles: string[]) {
         });
 }
 
-// ── Helper: Generate token (pakai di auth controller) ───────
-// Contoh penggunaan di AuthController.login():
-//   const token = await signToken(ctx.jwt, { id: 1, email: '...', role: 'admin', name: '...' });
+// ── Helper: Generate token JWT ──────────────────────────────
 export async function signToken(
     jwtInstance: { sign: (payload: object) => Promise<string> },
     payload: JwtPayload

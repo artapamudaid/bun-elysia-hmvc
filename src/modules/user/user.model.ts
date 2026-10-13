@@ -31,6 +31,11 @@ export class UserModel {
         return await db<User>('users').where({ id }).first();
     }
 
+    // Ambil detail satu user berdasarkan Email
+    static async getByEmail(email: string): Promise<User | undefined> {
+        return await db<User>('users').where({ email }).first();
+    }
+
     // Tambah user baru
     static async create(name: string, email: string) {
         return await db('users').insert({ name, email });

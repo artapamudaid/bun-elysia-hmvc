@@ -140,6 +140,98 @@ Buka browser dan akses:
 
 ---
 
+## 🌐 Dua Mode Route: Web Mode vs API Mode
+
+Aplikasi ini memisahkan jalur rute menjadi **Web Mode** (Server-Side Rendered HTML) dan **API Mode** (Stateless JSON REST API).
+
+### 1. Perbandingan Karakteristik
+
+| Fitur | Mode Web (`/users`, dll) | Mode API (`/api/...`) |
+| :--- | :--- | :--- |
+| **Output** | HTML View (`EJS` Template) | JSON Payload (`ApiResponse`) |
+| **Autentikasi** | Session / Cookie | JWT Token (`Authorization: Bearer <token>`) |
+| **Proteksi CSRF** | Aktif (Form `<input name="csrf_token">`) | Dikecualikan (`/api/` bebas CSRF) |
+| **Handling Error** | Halaman HTML (404/500 template) | Respon JSON standar (`{ success: false, ... }`) |
+| **Redirect** | HTTP 302 Found dengan query state | Status code HTTP murni (200, 201, 401, 404) |
+
+---
+
+### 2. Standar Request & Response Mode API
+
+Semua endpoint di bawah prefix `/api/` menggunakan helper standar `ApiResponse` (`src/helpers/response_helper.ts`):
+
+#### Format Respon Sukses (200 / 201):
+```json
+{
+  "success": true,
+  "message": "Daftar pengguna berhasil diambil",
+  "data": [
+    {
+      "id": 9,
+      "name": "Admin Utama",
+      "email": "admin@example.com",
+      "created_at": "2026-10-13T07:38:16.000Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "perPage": 10,
+    "recordsTotal": 15,
+    "recordsFiltered": 15,
+    "lastPage": 2,
+    "hasNext": true,
+    "hasPrev": false
+  }
+}
+```
+
+#### Format Respon Error (400, 401, 403, 404, 500):
+```json
+{
+  "success": false,
+  "message": "Akses ditolak: Token JWT tidak ditemukan, salah, atau telah kedaluwarsa",
+  "error": "UNAUTHORIZED"
+}
+```
+
+---
+
+### 3. Middleware JWT & Proteksi Endpoint API
+
+Middleware JWT (`src/middleware/auth.middleware.ts`) mengekstrak token dari:
+1. Header `Authorization: Bearer <token>`
+2. Cookie `auth_token`
+
+#### Contoh Endpoint Autentikasi:
+- **Login API**:
+  ```bash
+  curl -X POST http://localhost:3012/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email": "admin@example.com"}'
+  ```
+
+- **Akses Route Terproteksi**:
+  Kirim header `Authorization: Bearer <token>`:
+  ```bash
+  curl http://localhost:3012/api/auth/profile \
+    -H "Authorization: Bearer <token>"
+  ```
+
+- **Menambahkan Guard pada Route Baru**:
+  ```typescript
+  import { Elysia } from 'elysia';
+  import { authMiddleware, requireApiAuth } from '@/middleware/auth.middleware';
+
+  export const exampleApiRoutes = new Elysia({ prefix: '/api/example' })
+      .use(authMiddleware)
+      .get('/public', () => 'Siapa saja bisa akses')
+      .guard({ beforeHandle: requireApiAuth.event.beforeHandle }, app => app
+          .post('/secret', ({ user }) => ({ user }))
+      );
+  ```
+
+---
+
 ## 🛠️ Panduan Pengembangan
 
 ### Menambahkan Modul Baru (HMVC)

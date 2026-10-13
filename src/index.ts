@@ -11,6 +11,7 @@ import { loggerMiddleware, logAfterHandle } from './middleware/logger.middleware
 import { corsMiddleware } from './middleware/cors.middleware';
 import { rateLimitMiddleware } from './middleware/ratelimit.middleware';
 import { csrfMiddleware } from './middleware/csrf.middleware';
+import { ApiResponse } from './helpers/response_helper';
 
 // ── Auto-import semua *routes.ts di dalam src/modules/**  ──
 // Mirip CI3 HMVC: setiap modul mendaftarkan dirinya sendiri
@@ -52,6 +53,19 @@ const app = new Elysia()
         const message = error instanceof Error ? error.message : String(error);
         console.error(`[ERROR] ${request.method} ${new URL(request.url).pathname} — ${code}:`, message);
 
+        const isApi = new URL(request.url).pathname.startsWith('/api') ||
+            request.headers.get('accept')?.includes('application/json');
+
+        if (isApi) {
+            if (code === 'NOT_FOUND') {
+                return ApiResponse.notFound(`Endpoint ${new URL(request.url).pathname} tidak ditemukan`);
+            }
+            if (code === 'VALIDATION') {
+                return ApiResponse.validationError('Validasi data payload gagal', message);
+            }
+            return ApiResponse.error(appConfig.debug ? message : 'Internal Server Error', code, 500);
+        }
+
         if (code === 'NOT_FOUND') {
             return new Response(
                 `<h1>404 – Halaman tidak ditemukan</h1><p>${new URL(request.url).pathname}</p>`,
@@ -69,17 +83,16 @@ const app = new Elysia()
 for (const file of routeFiles) {
     const mod = await import(file);
 
-    // Convention: setiap routes.ts wajib export named export
-    // dengan suffix "Routes" (e.g. userRoutes, productRoutes)
-    const routeExport = Object.values(mod).find(
+    // Muat semua export instansiasi Elysia (Web maupun API)
+    const routeExports = Object.values(mod).filter(
         (v): v is Elysia => v instanceof Elysia
     );
 
-    if (routeExport) {
+    for (const routeExport of routeExports) {
         app.use(routeExport);
         if (appConfig.debug) {
-            const moduleName = file.split('/').at(-1)?.replace('.routes.ts', '');
-            console.log(`  ✔ Module loaded: ${moduleName}`);
+            const fileName = file.split('/').at(-1)?.replace('.ts', '');
+            console.log(`  ✔ Route loaded: ${fileName}`);
         }
     }
 }
