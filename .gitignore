@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun.log
+
+# SQLite / Local Databases
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# Build & Cache
+dist/
+build/
+out/
+.cache/
+.temp/
+*.tsbuildinfo
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Coverage & Tests
+coverage/
+.nyc_output/

@@ -1,0 +1,31 @@
+{
+  "name": "bun-elysia-hmvc",
+  "module": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "migrate": "bun x knex --knexfile src/config/knexfile.ts migrate:latest",
+    "migrate:rollback": "bun x knex --knexfile src/config/knexfile.ts migrate:rollback",
+    "migrate:status": "bun x knex --knexfile src/config/knexfile.ts migrate:status",
+    "migrate:make": "bun x knex --knexfile src/config/knexfile.ts migrate:make",
+    "seed": "bun x knex --knexfile src/config/knexfile.ts seed:run",
+    "seed:make": "bun x knex --knexfile src/config/knexfile.ts seed:make",
+    "db:fresh": "bun run migrate:rollback --all && bun run migrate && bun run seed"
+  },
+  "dependencies": {
+    "@elysiajs/cookie": "^0.8.0",
+    "@elysiajs/html": "latest",
+    "@elysiajs/jwt": "^1.4.2",
+    "@elysiajs/static": "^1.1.0",
+    "ejs": "^3.1.10",
+    "elysia": "latest",
+    "knex": "^3.1.0",
+    "mysql2": "^3.11.5",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/ejs": "^3.1.5"
+  }
+}

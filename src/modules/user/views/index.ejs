@@ -1,0 +1,438 @@
+<%
+  // Helper untuk membuat URL navigasi dengan mempertahankan parameter lain
+  function buildUrl(newPage, newSort, newOrder, newPerPage, newSearch) {
+    const p = newPage !== undefined ? newPage : datatable.page;
+    const s = newSort !== undefined ? newSort : datatable.sort;
+    const o = newOrder !== undefined ? newOrder : datatable.order;
+    const pp = newPerPage !== undefined ? newPerPage : datatable.perPage;
+    const q = newSearch !== undefined ? newSearch : datatable.search;
+    const params = new URLSearchParams();
+    if (p && p > 1) params.set('page', p);
+    if (pp && pp !== 10) params.set('per_page', pp);
+    if (q) params.set('search', q);
+    if (s && s !== 'id') params.set('sort', s);
+    if (o && o !== 'asc') params.set('order', o);
+    const qs = params.toString();
+    return '/users' + (qs ? '?' + qs : '');
+  }
+
+  function sortUrl(column) {
+    const nextOrder = (datatable.sort === column && datatable.order === 'asc') ? 'desc' : 'asc';
+    return buildUrl(1, column, nextOrder);
+  }
+
+  // URL halaman saat ini untuk dipertahankan setelah submit aksi CRUD (Create/Update/Delete)
+  const currentReturnUrl = buildUrl();
+%>
+
+<!-- Header Modul -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <a href="/" class="text-decoration-none text-info small d-inline-flex align-items-center gap-1 mb-1">
+            <i class="bi bi-arrow-left"></i> Kembali ke Beranda
+        </a>
+        <h2 class="fw-bold text-light mb-1"><%= title %></h2>
+        <p class="text-muted small mb-0">Standar CRUD HMVC dengan Server-Side Filter, Sorting, Pagination, dan SweetAlert2.</p>
+    </div>
+    <div>
+        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 px-3 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCreateUser">
+            <i class="bi bi-person-plus-fill"></i> Tambah Pengguna
+        </button>
+    </div>
+</div>
+
+<!-- Container Card Datatable -->
+<div class="card bg-black border border-secondary shadow-lg rounded-3 overflow-hidden mb-4">
+    <!-- Datatable Controls Bar -->
+    <div class="card-header bg-dark bg-opacity-50 border-secondary p-3">
+        <form method="GET" action="/users" class="row g-3 align-items-center">
+            <!-- Hidden inputs untuk mempertahankan sorting saat submit filter -->
+            <input type="hidden" name="sort" value="<%= datatable.sort %>">
+            <input type="hidden" name="order" value="<%= datatable.order %>">
+
+            <!-- Per Page Selector -->
+            <div class="col-12 col-sm-auto d-flex align-items-center gap-2">
+                <label for="per_page" class="text-secondary small text-nowrap">Tampilkan:</label>
+                <select name="per_page" id="per_page" class="form-select form-select-sm bg-dark text-light border-secondary w-auto" onchange="this.form.submit()">
+                    <option value="5" <%= datatable.perPage === 5 ? 'selected' : '' %>>5</option>
+                    <option value="10" <%= datatable.perPage === 10 ? 'selected' : '' %>>10</option>
+                    <option value="25" <%= datatable.perPage === 25 ? 'selected' : '' %>>25</option>
+                    <option value="50" <%= datatable.perPage === 50 ? 'selected' : '' %>>50</option>
+                </select>
+                <span class="text-secondary small text-nowrap">entri</span>
+            </div>
+
+            <!-- Search Input -->
+            <div class="col-12 col-sm ms-auto">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-dark text-secondary border-secondary">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="search" value="<%= datatable.search %>" class="form-control bg-dark text-light border-secondary" placeholder="Cari nama atau email pengguna...">
+                    <button class="btn btn-primary" type="submit">Cari</button>
+                    <% if (datatable.search) { %>
+                        <a href="<%= buildUrl(1, undefined, undefined, undefined, '') %>" class="btn btn-outline-secondary" title="Hapus Filter">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table Responsive -->
+    <div class="table-responsive">
+        <table class="table table-dark table-striped table-hover align-middle mb-0 border-secondary">
+            <thead>
+                <tr class="border-secondary text-secondary small text-uppercase">
+                    <!-- Column: No -->
+                    <th scope="col" style="width: 60px;" class="text-center">
+                        <a href="<%= sortUrl('id') %>" class="text-decoration-none text-reset d-inline-flex align-items-center gap-1" title="Urutkan berdasarkan ID">
+                            <span>No</span>
+                            <% if (datatable.sort === 'id') { %>
+                                <i class="bi bi-sort-numeric-<%= datatable.order === 'asc' ? 'down text-primary' : 'down-alt text-primary' %>"></i>
+                            <% } else { %>
+                                <i class="bi bi-arrow-down-up text-muted opacity-50"></i>
+                            <% } %>
+                        </a>
+                    </th>
+
+                    <!-- Column: Nama -->
+                    <th scope="col">
+                        <a href="<%= sortUrl('name') %>" class="text-decoration-none text-reset d-flex align-items-center gap-1">
+                            <span>Nama Lengkap</span>
+                            <% if (datatable.sort === 'name') { %>
+                                <i class="bi bi-sort-alpha-<%= datatable.order === 'asc' ? 'down text-primary' : 'down-alt text-primary' %>"></i>
+                            <% } else { %>
+                                <i class="bi bi-arrow-down-up text-muted opacity-50"></i>
+                            <% } %>
+                        </a>
+                    </th>
+
+                    <!-- Column: Email -->
+                    <th scope="col">
+                        <a href="<%= sortUrl('email') %>" class="text-decoration-none text-reset d-flex align-items-center gap-1">
+                            <span>Alamat Email</span>
+                            <% if (datatable.sort === 'email') { %>
+                                <i class="bi bi-sort-alpha-<%= datatable.order === 'asc' ? 'down text-primary' : 'down-alt text-primary' %>"></i>
+                            <% } else { %>
+                                <i class="bi bi-arrow-down-up text-muted opacity-50"></i>
+                            <% } %>
+                        </a>
+                    </th>
+
+                    <!-- Column: Created At -->
+                    <th scope="col" style="width: 180px;">
+                        <a href="<%= sortUrl('created_at') %>" class="text-decoration-none text-reset d-flex align-items-center gap-1">
+                            <span>Terdaftar</span>
+                            <% if (datatable.sort === 'created_at') { %>
+                                <i class="bi bi-sort-down<%= datatable.order === 'asc' ? ' text-primary' : '-alt text-primary' %>"></i>
+                            <% } else { %>
+                                <i class="bi bi-arrow-down-up text-muted opacity-50"></i>
+                            <% } %>
+                        </a>
+                    </th>
+
+                    <!-- Column: Aksi -->
+                    <th scope="col" class="text-center" style="width: 140px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (datatable.data.length === 0) { %>
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                                <% if (datatable.search) { %>
+                                    <span>Tidak ada pengguna yang cocok dengan pencarian "<strong><%= datatable.search %></strong>".</span>
+                                    <div class="mt-2">
+                                        <a href="/users" class="btn btn-sm btn-outline-info">Reset Pencarian</a>
+                                    </div>
+                                <% } else { %>
+                                    <span>Belum ada data pengguna.</span>
+                                <% } %>
+                            </div>
+                        </td>
+                    </tr>
+                <% } else { %>
+                    <% datatable.data.forEach((u, index) => { %>
+                        <tr>
+                            <td class="text-secondary fw-semibold text-center"><%= datatable.from + index %></td>
+                            <td>
+                                <div class="fw-bold text-light"><%= u.name %></div>
+                            </td>
+                            <td>
+                                <span class="text-info font-monospace small"><%= u.email %></span>
+                            </td>
+                            <td class="text-secondary small">
+                                <%= u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-' %>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-warning btn-edit-user"
+                                        data-id="<%= u.id %>"
+                                        data-name="<%= u.name %>"
+                                        data-email="<%= u.email %>"
+                                        title="Edit Data">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-delete-user"
+                                        data-id="<%= u.id %>"
+                                        data-name="<%= u.name %>"
+                                        data-url="/users/delete/<%= u.id %>?return_url=<%= encodeURIComponent(currentReturnUrl) %>"
+                                        title="Hapus Data">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Datatable Footer: Info & Pagination -->
+    <div class="card-footer bg-dark bg-opacity-50 border-secondary p-3">
+        <div class="row align-items-center gy-3">
+            <!-- Informasi Baris -->
+            <div class="col-12 col-md-6 text-center text-md-start small text-secondary">
+                <% if (datatable.recordsFiltered > 0) { %>
+                    Menampilkan <strong><%= datatable.from %></strong> sampai <strong><%= datatable.to %></strong> dari <strong><%= datatable.recordsFiltered %></strong> entri
+                    <% if (datatable.recordsFiltered !== datatable.recordsTotal) { %>
+                        <span class="text-muted">(disaring dari <%= datatable.recordsTotal %> total)</span>
+                    <% } %>
+                <% } else { %>
+                    Menampilkan 0 entri
+                <% } %>
+            </div>
+
+            <!-- Tombol Navigasi Halaman -->
+            <div class="col-12 col-md-6">
+                <nav aria-label="Navigasi Halaman">
+                    <ul class="pagination pagination-sm justify-content-center justify-content-md-end mb-0">
+                        <!-- First Page -->
+                        <li class="page-item <%= datatable.page <= 1 ? 'disabled' : '' %>">
+                            <a class="page-link bg-dark text-light border-secondary" href="<%= buildUrl(1) %>" aria-label="Awal">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+
+                        <!-- Previous -->
+                        <li class="page-item <%= !datatable.hasPrev ? 'disabled' : '' %>">
+                            <a class="page-link bg-dark text-light border-secondary" href="<%= buildUrl(datatable.page - 1) %>" aria-label="Sebelumnya">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+
+                        <!-- Page Numbers (max 5 pages shown) -->
+                        <%
+                          const maxVisiblePages = 5;
+                          let startPage = Math.max(1, datatable.page - Math.floor(maxVisiblePages / 2));
+                          let endPage = Math.min(datatable.lastPage, startPage + maxVisiblePages - 1);
+                          if (endPage - startPage + 1 < maxVisiblePages) {
+                            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                          }
+                        %>
+
+                        <% for (let p = startPage; p <= endPage; p++) { %>
+                            <li class="page-item <%= p === datatable.page ? 'active' : '' %>">
+                                <a class="page-link <%= p === datatable.page ? 'bg-primary border-primary text-white fw-bold' : 'bg-dark text-light border-secondary' %>" href="<%= buildUrl(p) %>">
+                                    <%= p %>
+                                </a>
+                            </li>
+                        <% } %>
+
+                        <!-- Next -->
+                        <li class="page-item <%= !datatable.hasNext ? 'disabled' : '' %>">
+                            <a class="page-link bg-dark text-light border-secondary" href="<%= buildUrl(datatable.page + 1) %>" aria-label="Berikutnya">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+
+                        <!-- Last Page -->
+                        <li class="page-item <%= datatable.page >= datatable.lastPage ? 'disabled' : '' %>">
+                            <a class="page-link bg-dark text-light border-secondary" href="<%= buildUrl(datatable.lastPage) %>" aria-label="Akhir">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tambah User (Create) -->
+<div class="modal fade" id="modalCreateUser" tabindex="-1" aria-labelledby="modalCreateUserLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border border-secondary shadow-lg">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-light" id="modalCreateUserLabel">
+                    <i class="bi bi-person-plus text-primary me-1"></i> Tambah Pengguna Baru
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/users" method="POST">
+                <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+                    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                <% } %>
+                <!-- Menyimpan return_url agar setelah simpan tetap berada pada tampilan saat ini -->
+                <input type="hidden" name="return_url" value="<%= currentReturnUrl %>">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="create_name" class="form-label small text-secondary">Nama Lengkap</label>
+                        <input type="text" class="form-control bg-black text-light border-secondary" id="create_name" name="name" placeholder="Contoh: Budi Santoso" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="create_email" class="form-label small text-secondary">Alamat Email</label>
+                        <input type="email" class="form-control bg-black text-light border-secondary" id="create_email" name="email" placeholder="Contoh: budi@example.com" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary px-4">Simpan Pengguna</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit User (Update) -->
+<div class="modal fade" id="modalEditUser" tabindex="-1" aria-labelledby="modalEditUserLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border border-secondary shadow-lg">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-light" id="modalEditUserLabel">
+                    <i class="bi bi-pencil-square text-warning me-1"></i> Edit Data Pengguna
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditUser" action="/users/update/0" method="POST">
+                <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+                    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                <% } %>
+                <!-- Menyimpan return_url agar setelah update tetap berada di halaman & filter yang sama -->
+                <input type="hidden" name="return_url" id="edit_return_url" value="<%= currentReturnUrl %>">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label small text-secondary">Nama Lengkap</label>
+                        <input type="text" class="form-control bg-black text-light border-secondary" id="edit_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_email" class="form-label small text-secondary">Alamat Email</label>
+                        <input type="email" class="form-control bg-black text-light border-secondary" id="edit_email" name="email" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning px-4 text-dark fw-semibold">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. Tangani SweetAlert2 Flash Message dari URL parameter (?status=created|updated|deleted)
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+
+        if (status) {
+            let titleText = '';
+            if (status === 'created') {
+                titleText = 'Pengguna baru berhasil ditambahkan!';
+            } else if (status === 'updated') {
+                titleText = 'Data pengguna berhasil diperbarui!';
+            } else if (status === 'deleted') {
+                titleText = 'Data pengguna berhasil dihapus!';
+            }
+
+            if (titleText && typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: titleText,
+                    showConfirmButton: false,
+                    timer: 3500,
+                    timerProgressBar: true,
+                    background: '#111827',
+                    color: '#f8fafc',
+                });
+
+                // Hapus parameter status dari address bar browser tanpa me-refresh halaman
+                urlParams.delete('status');
+                const remainingQuery = urlParams.toString();
+                const cleanUrl = window.location.pathname + (remainingQuery ? '?' + remainingQuery : '');
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+        }
+
+        // 2. Handle klik tombol Edit User untuk mengisi modal
+        const editButtons = document.querySelectorAll('.btn-edit-user');
+        const modalEditElement = document.getElementById('modalEditUser');
+        const formEdit = document.getElementById('formEditUser');
+        const inputEditName = document.getElementById('edit_name');
+        const inputEditEmail = document.getElementById('edit_email');
+        const inputEditReturnUrl = document.getElementById('edit_return_url');
+
+        if (modalEditElement && editButtons.length > 0) {
+            const editModal = new bootstrap.Modal(modalEditElement);
+
+            editButtons.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    const email = this.getAttribute('data-email');
+
+                    formEdit.action = `/users/update/${id}`;
+                    inputEditName.value = name || '';
+                    inputEditEmail.value = email || '';
+                    if (inputEditReturnUrl) {
+                        inputEditReturnUrl.value = window.location.pathname + window.location.search;
+                    }
+
+                    editModal.show();
+                });
+            });
+        }
+
+        // 3. Handle klik tombol Hapus dengan SweetAlert2 Confirm
+        const deleteButtons = document.querySelectorAll('.btn-delete-user');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const userName = this.getAttribute('data-name') || 'pengguna ini';
+                const deleteUrl = this.getAttribute('data-url');
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Hapus Pengguna?',
+                        html: `Apakah Anda yakin ingin menghapus data <strong>"${userName}"</strong>?<br><span class="text-secondary small">Data yang dihapus tidak dapat dipulihkan.</span>`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#4b5563',
+                        confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true,
+                        focusCancel: true,
+                        background: '#111827',
+                        color: '#f8fafc',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = deleteUrl;
+                        }
+                    });
+                } else {
+                    // Fallback jika SweetAlert belum selesai dimuat
+                    if (confirm(`Apakah Anda yakin ingin menghapus ${userName}?`)) {
+                        window.location.href = deleteUrl;
+                    }
+                }
+            });
+        });
+    });
+</script>
