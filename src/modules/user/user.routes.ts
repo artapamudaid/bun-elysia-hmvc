@@ -1,9 +1,11 @@
 import { Elysia, t } from 'elysia';
 import { UserController } from './user.controller';
+import { requireWebAuth } from '../../middleware/auth.middleware';
 
 export const userRoutes = new Elysia({ prefix: '/users' })
+    .use(requireWebAuth)
     // Read: Halaman utama dengan filter, sort, & pagination (Server-Side)
-    .get('/', ({ query, csrfToken, headers }: any) => UserController.index({ query, csrfToken, headers }))
+    .get('/', ({ query, csrfToken, headers, user }: any) => UserController.index({ query, csrfToken, headers, user }))
 
     // Read (API JSON): Endpoint datatable untuk AJAX
     .get('/data', ({ query }: any) => UserController.data({ query }))

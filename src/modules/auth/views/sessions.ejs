@@ -1,0 +1,151 @@
+<!-- Header Modul Session Management -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <a href="/users" class="text-decoration-none text-info small d-inline-flex align-items-center gap-1 mb-1">
+            <i class="bi bi-arrow-left"></i> Kembali ke Modul Pengguna
+        </a>
+        <h2 class="fw-bold text-light mb-1">
+            <i class="bi bi-display text-primary me-2"></i><%= title %>
+        </h2>
+        <p class="text-muted small mb-0">Tabel manajemen sesi aktif pengguna yang tersimpan di database (Mirip CI3 Database Session Driver).</p>
+    </div>
+    <div>
+        <a href="/auth/logout" class="btn btn-outline-danger d-inline-flex align-items-center gap-2 px-3 py-2 shadow-sm">
+            <i class="bi bi-box-arrow-right"></i> Keluar (Logout)
+        </a>
+    </div>
+</div>
+
+<!-- Card Tabel Sesi -->
+<div class="card bg-black border border-secondary shadow-lg rounded-3 overflow-hidden mb-4">
+    <div class="card-header bg-dark bg-opacity-50 border-secondary p-3 d-flex justify-content-between align-items-center">
+        <span class="text-secondary small fw-semibold">
+            <i class="bi bi-hdd-network me-1"></i> Total Sesi Aktif: <span class="badge bg-primary ms-1"><%= sessions.length %></span>
+        </span>
+        <button class="btn btn-sm btn-outline-secondary" onclick="window.location.reload()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Segarkan Data
+        </button>
+    </div>
+
+    <!-- Table Responsive -->
+    <div class="table-responsive">
+        <table class="table table-dark table-striped table-hover align-middle mb-0 border-secondary">
+            <thead>
+                <tr class="border-secondary text-secondary small text-uppercase">
+                    <th scope="col" style="width: 60px;" class="text-center">No</th>
+                    <th scope="col">Pengguna</th>
+                    <th scope="col">Alamat IP</th>
+                    <th scope="col">Perangkat / Browser</th>
+                    <th scope="col" style="width: 180px;">Aktivitas Terakhir</th>
+                    <th scope="col" class="text-center" style="width: 120px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (sessions.length === 0) { %>
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                            Tidak ada sesi aktif di database.
+                        </td>
+                    </tr>
+                <% } else { %>
+                    <% sessions.forEach((s, idx) => { %>
+                        <tr>
+                            <td class="text-secondary fw-semibold text-center"><%= idx + 1 %></td>
+                            <td>
+                                <div class="fw-bold text-light"><%= s.user_name || 'User #' + s.user_id %></div>
+                                <div class="text-secondary small"><%= s.user_email || '-' %></div>
+                            </td>
+                            <td>
+                                <span class="badge bg-dark border border-secondary text-info font-monospace">
+                                    <%= s.ip_address || '127.0.0.1' %>
+                                </span>
+                            </td>
+                            <td class="small text-secondary" style="max-width: 320px;">
+                                <div class="text-truncate" title="<%= s.user_agent %>">
+                                    <i class="bi bi-laptop me-1 text-primary"></i>
+                                    <%= s.user_agent || 'Unknown Browser' %>
+                                </div>
+                            </td>
+                            <td class="text-secondary small">
+                                <%
+                                  const date = new Date(s.last_activity * 1000);
+                                  const formatted = date.toLocaleDateString('id-ID', {
+                                    day: '2-digit', month: 'short', year: 'numeric',
+                                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                                  });
+                                %>
+                                <i class="bi bi-clock me-1 text-muted"></i><%= formatted %>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-revoke-session"
+                                    data-id="<%= s.id %>"
+                                    data-user="<%= s.user_name %>"
+                                    data-url="/auth/sessions/revoke/<%= s.id %>"
+                                    title="Cabut / Putus Sesi Ini">
+                                    <i class="bi bi-x-circle me-1"></i> Cabut
+                                </button>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Notifikasi SweetAlert2 status revoke
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+
+        if (status === 'revoked' && typeof Swal !== 'undefined') {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Sesi berhasil dicabut!',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                background: '#111827',
+                color: '#f8fafc',
+            });
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        // Konfirmasi Hapus / Cabut Sesi
+        const revokeBtns = document.querySelectorAll('.btn-revoke-session');
+        revokeBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const user = this.getAttribute('data-user') || 'pengguna ini';
+                const url = this.getAttribute('data-url');
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Cabut Sesi?',
+                        html: `Apakah Anda yakin ingin memutuskan sesi untuk <strong>"${user}"</strong>?<br><span class="text-secondary small">Pengguna ini akan otomatis keluar dari perangkat tersebut.</span>`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#4b5563',
+                        confirmButtonText: '<i class="bi bi-x-circle me-1"></i> Ya, Cabut Sesi',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true,
+                        background: '#111827',
+                        color: '#f8fafc',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = url;
+                        }
+                    });
+                } else {
+                    if (confirm(`Apakah Anda yakin ingin mencabut sesi untuk ${user}?`)) {
+                        window.location.href = url;
+                    }
+                }
+            });
+        });
+    });
+</script>

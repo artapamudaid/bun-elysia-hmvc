@@ -1,12 +1,15 @@
 // ============================================================
-//  Auth Middleware (JWT-based)
-//  Mendukung 2 mode: API (Bearer Token -> JSON) & Web (Cookie -> Redirect)
+//  Auth Middleware (JWT + Database Session Management)
+//  Mendukung 2 mode:
+//  - Mode Web: Validasi cookie session_id terhadap database table `sessions`
+//  - Mode API: Validasi Authorization Bearer Token
 // ============================================================
 
 import { Elysia } from 'elysia';
 import { jwt } from '@elysiajs/jwt';
 import { cookie } from '@elysiajs/cookie';
 import { ApiResponse } from '../helpers/response_helper';
+import { SessionModel } from '../modules/auth/session.model';
 
 // ── Tipe payload JWT ────────────────────────────────────────
 export interface JwtPayload {
@@ -17,7 +20,6 @@ export interface JwtPayload {
 }
 
 // ── Auth Middleware ─────────────────────────────────────────
-// Decode JWT dari Authorization Header (Bearer) atau Cookie
 export const authMiddleware = new Elysia({ name: 'middleware:auth' })
     .use(jwt({
         name:   'jwt',
@@ -26,14 +28,16 @@ export const authMiddleware = new Elysia({ name: 'middleware:auth' })
     }))
     .use(cookie())
     .derive({ as: 'global' }, async ({ jwt: jwtInstance, cookie, request }) => {
-        // 1. Cek Authorization Header: Bearer <token>
+        // 1. Cek Authorization Header: Bearer <token> (Mode API)
         const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
         let token: string | null = null;
+        let isBearer = false;
 
         if (authHeader && authHeader.startsWith('Bearer ')) {
             token = authHeader.substring(7).trim();
+            isBearer = true;
         } else if (cookie?.auth_token?.value) {
-            // 2. Fallback: Cek cookie auth_token
+            // 2. Mode Web: Cek cookie auth_token
             token = cookie.auth_token.value;
         }
 
@@ -50,13 +54,31 @@ export const authMiddleware = new Elysia({ name: 'middleware:auth' })
             }
         }
 
-        return { user, token };
+        // 3. Jika Mode Web (bukan Bearer token):
+        // Wajib validasi sesi aktif di database tabel `sessions`
+        const sessionId = cookie?.session_id?.value;
+        if (!isBearer && user) {
+            if (!sessionId) {
+                user = null; // Tidak ada session_id
+            } else {
+                const activeSession = await SessionModel.getById(sessionId);
+                if (!activeSession) {
+                    // Sesi telah dicabut (revoked) atau dihapus dari tabel sessions
+                    user = null;
+                } else {
+                    // Update aktivitas terakhir sesi di database
+                    SessionModel.touch(sessionId).catch(() => {});
+                }
+            }
+        }
+
+        return { user, token, sessionId };
     });
 
 // ── Guard API: Wajib Login (Mengembalikan JSON 401) ───────────
 export const requireApiAuth = new Elysia({ name: 'guard:api:auth' })
     .use(authMiddleware)
-    .onBeforeHandle({ as: 'global' }, ({ user, set }: { user: JwtPayload | null; set: any }) => {
+    .onBeforeHandle({ as: 'scoped' }, ({ user, set }: { user: JwtPayload | null; set: any }) => {
         if (!user) {
             set.status = 401;
             return ApiResponse.unauthorized('Akses ditolak: Token JWT tidak ditemukan, salah, atau telah kedaluwarsa');
@@ -66,7 +88,7 @@ export const requireApiAuth = new Elysia({ name: 'guard:api:auth' })
 // ── Guard Web: Wajib Login (Redirect 302 ke /auth/login) ──────
 export const requireWebAuth = new Elysia({ name: 'guard:web:auth' })
     .use(authMiddleware)
-    .onBeforeHandle({ as: 'global' }, ({ user, set }: { user: JwtPayload | null; set: any }) => {
+    .onBeforeHandle({ as: 'scoped' }, ({ user, set }: { user: JwtPayload | null; set: any }) => {
         if (!user) {
             set.status = 302;
             return new Response(null, {

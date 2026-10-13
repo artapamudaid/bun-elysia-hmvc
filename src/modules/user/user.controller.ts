@@ -19,7 +19,7 @@ export class UserController {
     }
 
     // Menampilkan halaman daftar user dengan filter & pagination server-side
-    static async index({ query = {}, csrfToken = '', headers = {} }: any) {
+    static async index({ query = {}, csrfToken = '', headers = {}, user }: any) {
         const params = {
             page: query.page,
             perPage: query.per_page || query.perPage,
@@ -45,6 +45,7 @@ export class UserController {
             datatable: result,
             csrfToken: csrfToken ?? '',
             query: query,
+            currentUser: user,
         });
     }
 
