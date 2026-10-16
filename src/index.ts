@@ -12,6 +12,9 @@ import { corsMiddleware } from './middleware/cors.middleware';
 import { rateLimitMiddleware } from './middleware/ratelimit.middleware';
 import { csrfMiddleware } from './middleware/csrf.middleware';
 import { ApiResponse } from './helpers/response_helper';
+import { jobRoutes } from './modules/job/job.routes';
+import ejs from 'ejs';
+import path from 'path';
 
 // ── Auto-import semua *routes.ts di dalam src/modules/**  ──
 // Mirip CI3 HMVC: setiap modul mendaftarkan dirinya sendiri
@@ -49,7 +52,7 @@ const app = new Elysia()
     })
 
     // Global error handler (mirip CI3 show_error / show_404)
-    .onError(({ code, error, request }) => {
+    .onError(async ({ code, error, request }) => {
         const message = error instanceof Error ? error.message : String(error);
         console.error(`[ERROR] ${request.method} ${new URL(request.url).pathname} — ${code}:`, message);
 
@@ -67,10 +70,14 @@ const app = new Elysia()
         }
 
         if (code === 'NOT_FOUND') {
-            return new Response(
-                `<h1>404 – Halaman tidak ditemukan</h1><p>${new URL(request.url).pathname}</p>`,
-                { status: 404, headers: { 'Content-Type': 'text/html' } }
-            );
+            const errorViewPath = path.join(import.meta.dir, 'views/errors/404.ejs');
+            const html = await ejs.renderFile(errorViewPath, {
+                requestedPath: new URL(request.url).pathname,
+            });
+            return new Response(html, {
+                status: 404,
+                headers: { 'Content-Type': 'text/html; charset=utf-8' },
+            });
         }
 
         return new Response(
@@ -79,8 +86,14 @@ const app = new Elysia()
         );
     });
 
+// Route pekerjaan juga didaftarkan eksplisit agar modul rekrutmen selalu aktif.
+app.use(jobRoutes);
+
 // ── Register semua module routes secara dinamis ────────────
 for (const file of routeFiles) {
+    // Sudah dipasang eksplisit di atas.
+    if (file.endsWith('/job.routes.ts')) continue;
+
     const mod = await import(file);
 
     // Muat semua export instansiasi Elysia (Web maupun API)

@@ -8,14 +8,11 @@
 import type { Knex } from 'knex';
 
 export async function seed(knex: Knex): Promise<void> {
-    // Truncate dulu (mirip CI3 truncate before seed)
-    await knex('users').del();
-
     // Hash default password 'password123'
     const defaultPassword = await Bun.password.hash('password123');
 
-    // Insert data dummy
-    await knex('users').insert([
+    // Tambahkan akun demo yang belum ada tanpa menghapus data pengguna.
+    const demoUsers = [
         { name: 'Admin Utama',       email: 'admin@example.com',   password: defaultPassword, role: 'admin' },
         { name: 'Budi Santoso',      email: 'budi@example.com',    password: defaultPassword, role: 'user' },
         { name: 'Citra Dewi',        email: 'citra@example.com',   password: defaultPassword, role: 'user' },
@@ -31,5 +28,10 @@ export async function seed(knex: Knex): Promise<void> {
         { name: 'Mega Utami',        email: 'mega@example.com',    password: defaultPassword, role: 'user' },
         { name: 'Nanda Pratama',     email: 'nanda@example.com',   password: defaultPassword, role: 'user' },
         { name: 'Oki Setiawan',      email: 'oki@example.com',     password: defaultPassword, role: 'user' },
-    ]);
+    ];
+
+    for (const user of demoUsers) {
+        const exists = await knex('users').where({ email: user.email }).first('id');
+        if (!exists) await knex('users').insert(user);
+    }
 }

@@ -1,15 +1,15 @@
 // ============================================================
-//  Knex Configuration File (untuk CLI: knex migrate:*, seed:*)
+//  Knex Configuration File (digunakan database CLI yang berjalan di Bun)
 //  Mirip CI3 application/config/database.php
 // ============================================================
 
 import type { Knex } from 'knex';
 
-// Load .env manual karena Bun.env tidak tersedia saat knex CLI jalan
+// Load .env manual agar konfigurasi tetap tersedia untuk perintah database.
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-// Knex CLI mengubah cwd ke folder knexfile, jadi resolve dari __dirname
+// Resolve path relatif terhadap file ini, bukan working directory shell.
 const envPath = resolve(import.meta.dir, '../../.env');
 const env: Record<string, string> = {};
 

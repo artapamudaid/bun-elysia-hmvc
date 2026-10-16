@@ -1,0 +1,51 @@
+<%
+    function dateInputValue(value) {
+        if (!value) return '';
+        if (typeof value === 'string') return value.slice(0, 10);
+        const month = String(value.getMonth() + 1).padStart(2, '0');
+        const day = String(value.getDate()).padStart(2, '0');
+        return `${value.getFullYear()}-${month}-${day}`;
+    }
+%>
+<div class="row g-3">
+    <div class="col-12">
+        <label class="form-label" for="title-<%= job ? job.id : 'new' %>">Judul lowongan</label>
+        <input class="form-control" id="title-<%= job ? job.id : 'new' %>" name="title" maxlength="180" value="<%= job?.title ?? '' %>" placeholder="Contoh: Senior Product Designer" required>
+        <div class="form-text">Slug unik dibuat otomatis dari judul dan periode lowongan.</div>
+    </div>
+    <div class="col-12 col-md-6">
+        <label class="form-label" for="division-<%= job ? job.id : 'new' %>">Divisi</label>
+        <select class="form-select" id="division-<%= job ? job.id : 'new' %>" name="division_id" required>
+            <option value="">Pilih divisi</option>
+            <% divisions.forEach((division) => { %><option value="<%= division.id %>" <%= String(job?.division_id ?? '') === String(division.id) ? 'selected' : '' %>><%= division.name %></option><% }) %>
+        </select>
+    </div>
+    <div class="col-12 col-md-6">
+        <label class="form-label" for="start-date-<%= job ? job.id : 'new' %>">Tanggal mulai</label>
+        <input type="date" class="form-control" id="start-date-<%= job ? job.id : 'new' %>" name="start_date" value="<%= dateInputValue(job?.start_date) %>" required>
+    </div>
+    <div class="col-12 col-md-6">
+        <label class="form-label" for="end-date-<%= job ? job.id : 'new' %>">Tanggal berakhir</label>
+        <input type="date" class="form-control" id="end-date-<%= job ? job.id : 'new' %>" name="end_date" value="<%= dateInputValue(job?.end_date) %>" required>
+    </div>
+    <div class="col-12 col-md-6">
+        <label class="form-label" for="active-<%= job ? job.id : 'new' %>">Status publikasi</label>
+        <select class="form-select" id="active-<%= job ? job.id : 'new' %>" name="is_active" required>
+            <option value="true" <%= !job || job.is_active ? 'selected' : '' %>>Active</option>
+            <option value="false" <%= job && !job.is_active ? 'selected' : '' %>>Inactive</option>
+        </select>
+    </div>
+    <div class="col-12 col-md-6">
+        <label class="form-label" for="image-<%= job ? job.id : 'new' %>">Gambar lowongan</label>
+        <input type="file" class="form-control" id="image-<%= job ? job.id : 'new' %>" name="image" accept="image/jpeg,image/png,image/webp">
+        <div class="form-text">JPG, PNG, WebP; maksimal 5 MB. Kosongkan saat edit untuk mempertahankan gambar lama.</div>
+    </div>
+    <div class="col-12">
+        <label class="form-label" for="criteria-<%= job ? job.id : 'new' %>">Kriteria kandidat</label>
+        <textarea class="form-control" id="criteria-<%= job ? job.id : 'new' %>" name="criteria" rows="4" placeholder="Pengalaman, keterampilan, pendidikan, dan kualifikasi yang dibutuhkan" required><%= job?.criteria ?? '' %></textarea>
+    </div>
+    <div class="col-12">
+        <label class="form-label" for="description-<%= job ? job.id : 'new' %>">Job description</label>
+        <textarea class="form-control" id="description-<%= job ? job.id : 'new' %>" name="job_description" rows="6" placeholder="Tanggung jawab dan ruang lingkup pekerjaan" required><%= job?.job_description ?? '' %></textarea>
+    </div>
+</div>

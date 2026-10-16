@@ -52,6 +52,8 @@
             <div class="sidebar-menu-section">
                 <div class="sidebar-menu-title">Manajemen</div>
                 <ul class="sidebar-menu-list">
+                    <li class="sidebar-menu-item"><a href="/jobs" class="sidebar-menu-link <%= activeNav === 'jobs' ? 'active' : '' %>"><i class="bi bi-briefcase"></i><span>Lowongan</span></a></li>
+                    <li class="sidebar-menu-item"><a href="/divisions" class="sidebar-menu-link <%= activeNav === 'divisions' ? 'active' : '' %>"><i class="bi bi-diagram-3"></i><span>Divisi</span></a></li>
                     <li class="sidebar-menu-item"><a href="/users" class="sidebar-menu-link <%= activeNav === 'users' ? 'active' : '' %>"><i class="bi bi-people"></i><span>Pengguna</span></a></li>
                     <li class="sidebar-menu-item"><a href="/auth/sessions" class="sidebar-menu-link <%= activeNav === 'sessions' ? 'active' : '' %>"><i class="bi bi-hdd-network"></i><span>Sesi Aktif</span></a></li>
                 </ul>
@@ -73,7 +75,7 @@
         <header class="navbar-custom">
             <div class="navbar-left">
                 <button class="sidebar-toggle-btn me-2" id="sidebar-toggle" aria-label="Buka navigasi"><i class="bi bi-list"></i></button>
-                <div class="navbar-page-label d-none d-sm-block"><%= activeNav === 'sessions' ? 'Manajemen Sesi' : 'Manajemen Pengguna' %></div>
+                <div class="navbar-page-label d-none d-sm-block"><%= activeNav === 'sessions' ? 'Manajemen Sesi' : activeNav === 'jobs' ? 'Rekrutmen' : activeNav === 'divisions' ? 'Manajemen Divisi' : 'Manajemen Pengguna' %></div>
             </div>
             <div class="navbar-actions">
                 <% if (currentUser) { %>

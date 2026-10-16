@@ -21,7 +21,7 @@ Proyek ini menghadirkan kecepatan runtime Bun dengan modularitas HMVC yang rapi,
   - Tema gelap modern dengan **Bootstrap 5**.
   - **SweetAlert2 (Dark Theme)** untuk konfirmasi hapus data dan notifikasi toast aksi CRUD.
   - Mempertahankan posisi nomor halaman, sorting, dan filter setelah melakukan aksi Create/Update/Delete.
-- **🗄️ Database Knex.js**: Mendukung MySQL/MariaDB dan SQLite dengan sistem Migration dan Seed bawaan.
+- **🗄️ Database Knex.js**: Menggunakan MySQL/MariaDB dengan sistem Migration dan Seed yang berjalan melalui Bun.
 - **🧰 CI3-Style Helpers**: Helper familiar seperti `base_url()`, `site_url()`, `redirect()`, `slug()`, `format_date()`, `currency()`, dan `datatableQuery()`.
 
 ---

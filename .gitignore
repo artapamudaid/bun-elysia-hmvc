@@ -39,3 +39,7 @@ Thumbs.db
 # Coverage & Tests
 coverage/
 .nyc_output/
+
+# Uploaded recruitment assets are local runtime data
+public/uploads/jobs/*
+!public/uploads/jobs/.gitkeep

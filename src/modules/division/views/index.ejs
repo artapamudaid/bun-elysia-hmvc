@@ -1,0 +1,150 @@
+<%
+    const notices = {
+        created: ['success', 'Divisi berhasil dibuat.'],
+        updated: ['success', 'Divisi berhasil diperbarui.'],
+        deleted: ['success', 'Divisi berhasil dihapus.'],
+        invalid: ['warning', 'Nama divisi tidak valid.'],
+        duplicate: ['warning', 'Nama divisi sudah digunakan.'],
+        not_found: ['warning', 'Divisi tidak ditemukan.'],
+        in_use: ['warning', 'Divisi masih dipakai lowongan dan tidak dapat dihapus.'],
+    };
+    function buildUrl(newPage, newSort, newOrder, newPerPage, newSearch) {
+        const params = new URLSearchParams();
+        const page = newPage ?? datatable.page;
+        const sort = newSort ?? datatable.sort;
+        const order = newOrder ?? datatable.order;
+        const perPage = newPerPage ?? datatable.perPage;
+        const search = newSearch !== undefined ? newSearch : datatable.search;
+        if (page > 1) params.set('page', page);
+        if (perPage !== 10) params.set('per_page', perPage);
+        if (search) params.set('search', search);
+        if (sort !== 'name') params.set('sort', sort);
+        if (order !== 'asc') params.set('order', order);
+        const queryString = params.toString();
+        return '/divisions' + (queryString ? `?${queryString}` : '');
+    }
+    function sortUrl(column) {
+        return buildUrl(1, column, datatable.sort === column && datatable.order === 'asc' ? 'desc' : 'asc');
+    }
+    function sortIcon(column) {
+        if (datatable.sort !== column) return 'bi-arrow-down-up text-muted opacity-50';
+        return datatable.order === 'asc' ? 'bi-sort-alpha-down text-primary' : 'bi-sort-alpha-down-alt text-primary';
+    }
+    const currentReturnUrl = buildUrl();
+    const notice = notices[query.notice];
+%>
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="page-title mb-1">Divisi</h2>
+        <p class="page-subtitle">Kelola pilihan divisi yang tersedia untuk lowongan kerja.</p>
+    </div>
+    <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 px-3 py-2" data-bs-toggle="modal" data-bs-target="#divisionCreateModal">
+        <i class="bi bi-plus-lg"></i> Tambah Divisi
+    </button>
+</div>
+
+<% if (notice) { %>
+    <div class="alert alert-<%= notice[0] %> alert-dismissible fade show" role="alert">
+        <%= notice[1] %><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+    </div>
+<% } %>
+
+<div class="card overflow-hidden mb-4">
+    <div class="card-header p-3">
+        <form method="GET" action="/divisions" class="row g-3 align-items-center">
+            <input type="hidden" name="sort" value="<%= datatable.sort %>">
+            <input type="hidden" name="order" value="<%= datatable.order %>">
+            <div class="col-12 col-sm-auto d-flex align-items-center gap-2">
+                <label for="per_page" class="text-secondary small text-nowrap">Tampilkan:</label>
+                <select name="per_page" id="per_page" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                    <% [5, 10, 25, 50].forEach((count) => { %>
+                        <option value="<%= count %>" <%= datatable.perPage === count ? 'selected' : '' %>><%= count %></option>
+                    <% }) %>
+                </select>
+                <span class="text-secondary small text-nowrap">entri</span>
+            </div>
+            <div class="col-12 col-sm ms-auto">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-secondary"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" value="<%= datatable.search %>" class="form-control" placeholder="Cari nama divisi...">
+                    <button class="btn btn-primary" type="submit">Cari</button>
+                    <% if (datatable.search) { %><a href="<%= buildUrl(1, undefined, undefined, undefined, '') %>" class="btn btn-outline-secondary" title="Hapus pencarian"><i class="bi bi-x-lg"></i></a><% } %>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle mb-0">
+            <thead><tr class="border-secondary text-secondary small text-uppercase">
+                <th scope="col" class="text-center" style="width:70px"><a href="<%= sortUrl('id') %>" class="text-decoration-none text-reset d-inline-flex align-items-center gap-1">No <i class="bi <%= datatable.sort === 'id' ? (datatable.order === 'asc' ? 'bi-sort-numeric-down text-primary' : 'bi-sort-numeric-down-alt text-primary') : 'bi-arrow-down-up text-muted opacity-50' %>"></i></a></th>
+                <th scope="col"><a href="<%= sortUrl('name') %>" class="text-decoration-none text-reset d-inline-flex align-items-center gap-1">Nama Divisi <i class="bi <%= sortIcon('name') %>"></i></a></th>
+                <th scope="col" class="text-center" style="width:140px">Aksi</th>
+            </tr></thead>
+            <tbody>
+                <% if (!divisions.length) { %>
+                    <tr><td colspan="3" class="text-center py-5 text-secondary"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Belum ada divisi.</td></tr>
+                <% } else { %>
+                    <% divisions.forEach((division, index) => { %>
+                        <tr>
+                            <td class="text-secondary fw-semibold text-center"><%= datatable.from + index %></td>
+                            <td><span class="fw-bold"><%= division.name %></span></td>
+                            <td class="text-center text-nowrap">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#divisionEditModal-<%= division.id %>" aria-label="Edit <%= division.name %>"><i class="bi bi-pencil-square"></i></button>
+                                    <form action="/divisions/delete/<%= division.id %>" method="POST" class="d-inline" onsubmit="return confirm('Hapus divisi <%= division.name %>?')">
+                                        <% if (csrfToken) { %><input type="hidden" name="csrf_token" value="<%= csrfToken %>"><% } %>
+                                        <input type="hidden" name="return_url" value="<%= currentReturnUrl %>">
+                                        <button class="btn btn-outline-danger" type="submit" aria-label="Hapus <%= division.name %>"><i class="bi bi-trash3"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer p-3"><div class="row align-items-center gy-3">
+        <div class="col-12 col-md-6 text-center text-md-start small text-secondary">
+            <% if (datatable.recordsFiltered > 0) { %>
+                Menampilkan <strong><%= datatable.from %></strong> sampai <strong><%= datatable.to %></strong> dari <strong><%= datatable.recordsFiltered %></strong> entri
+                <% if (datatable.recordsFiltered !== datatable.recordsTotal) { %><span class="text-muted">(disaring dari <%= datatable.recordsTotal %> total)</span><% } %>
+            <% } else { %>Menampilkan 0 entri<% } %>
+        </div>
+        <div class="col-12 col-md-6"><nav aria-label="Navigasi halaman divisi"><ul class="pagination pagination-sm justify-content-center justify-content-md-end mb-0">
+            <li class="page-item <%= datatable.page <= 1 ? 'disabled' : '' %>"><a class="page-link" href="<%= buildUrl(1) %>" aria-label="Awal"><i class="bi bi-chevron-double-left"></i></a></li>
+            <li class="page-item <%= !datatable.hasPrev ? 'disabled' : '' %>"><a class="page-link" href="<%= buildUrl(datatable.page - 1) %>" aria-label="Sebelumnya"><i class="bi bi-chevron-left"></i></a></li>
+            <% let startPage = Math.max(1, datatable.page - 2); let endPage = Math.min(datatable.lastPage, startPage + 4); if (endPage - startPage + 1 < 5) startPage = Math.max(1, endPage - 4); %>
+            <% for (let page = startPage; page <= endPage; page++) { %><li class="page-item <%= page === datatable.page ? 'active' : '' %>"><a class="page-link" href="<%= buildUrl(page) %>"><%= page %></a></li><% } %>
+            <li class="page-item <%= !datatable.hasNext ? 'disabled' : '' %>"><a class="page-link" href="<%= buildUrl(datatable.page + 1) %>" aria-label="Berikutnya"><i class="bi bi-chevron-right"></i></a></li>
+            <li class="page-item <%= datatable.page >= datatable.lastPage ? 'disabled' : '' %>"><a class="page-link" href="<%= buildUrl(datatable.lastPage) %>" aria-label="Akhir"><i class="bi bi-chevron-double-right"></i></a></li>
+        </ul></nav></div>
+    </div></div>
+</div>
+
+<% divisions.forEach((division) => { %>
+    <div class="modal fade" id="divisionEditModal-<%= division.id %>" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+            <form action="/divisions/update/<%= division.id %>" method="POST">
+                <% if (csrfToken) { %><input type="hidden" name="csrf_token" value="<%= csrfToken %>"><% } %>
+                <input type="hidden" name="return_url" value="<%= currentReturnUrl %>">
+                <div class="modal-header"><h2 class="modal-title h5">Edit Divisi</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
+                <div class="modal-body"><label class="form-label" for="division-name-<%= division.id %>">Nama divisi</label><input class="form-control" id="division-name-<%= division.id %>" name="name" value="<%= division.name %>" maxlength="120" required></div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
+            </form>
+        </div></div>
+    </div>
+<% }) %>
+
+<div class="modal fade" id="divisionCreateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form action="/divisions" method="POST">
+            <% if (csrfToken) { %><input type="hidden" name="csrf_token" value="<%= csrfToken %>"><% } %>
+            <input type="hidden" name="return_url" value="<%= currentReturnUrl %>">
+            <div class="modal-header"><h2 class="modal-title h5">Tambah Divisi</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
+            <div class="modal-body"><label class="form-label" for="division-name-new">Nama divisi</label><input class="form-control" id="division-name-new" name="name" maxlength="120" placeholder="Contoh: Engineering" required></div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Tambah</button></div>
+        </form>
+    </div></div>
+</div>
