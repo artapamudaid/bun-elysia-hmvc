@@ -20,6 +20,8 @@ export class AuthController {
 
         return renderModuleView('auth/views/login', {
             title: 'Masuk Akun - Bun Elysia HMVC',
+            pageType: 'login',
+            currentUser: null,
             csrfToken: csrfToken ?? '',
             query,
         });
@@ -121,6 +123,7 @@ export class AuthController {
             title: 'Session Management - Sesi Pengguna Aktif',
             sessions,
             currentUser: user,
+            activeNav: 'sessions',
             csrfToken: csrfToken ?? '',
             query,
         });

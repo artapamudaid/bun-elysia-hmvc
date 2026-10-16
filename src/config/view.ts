@@ -11,7 +11,10 @@ export async function renderModuleView(viewPath: string, data: Record<string, an
     const layoutPath = path.join(import.meta.dir, '../views/layouts/main.ejs');
     const finalHtml = await ejs.renderFile(layoutPath, {
         ...data,
-        body: bodyContent
+        body: bodyContent,
+        pageType: data.pageType ?? 'app',
+        activeNav: data.activeNav ?? 'users',
+        currentUser: data.currentUser ?? null,
     });
 
     return new Response(finalHtml, {

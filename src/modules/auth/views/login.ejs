@@ -1,138 +1,67 @@
-<div class="row justify-content-center py-4">
-    <div class="col-12 col-md-8 col-lg-5">
-        <!-- Card Login -->
-        <div class="card bg-black border border-secondary shadow-lg rounded-4 overflow-hidden">
-            <!-- Header Card -->
-            <div class="card-header bg-dark bg-opacity-75 border-secondary text-center p-4">
-                <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-3">
-                    <i class="bi bi-shield-lock-fill fs-2"></i>
-                </div>
-                <h3 class="fw-bold text-light mb-1">Masuk ke Akun</h3>
-                <p class="text-secondary small mb-0">Bun Elysia HMVC Authentication & Session</p>
-            </div>
+<div class="login-bg-shape login-bg-shape-1"></div>
+<div class="login-bg-shape login-bg-shape-2"></div>
+<section class="login-card-wrapper">
+    <div class="login-card">
+        <a href="/users" class="login-brand"><i class="bi bi-asterisk"></i><span>Bun Elysia</span></a>
+        <h1 class="login-title">Masuk ke Akun</h1>
+        <p class="login-subtitle">Bun Elysia HMVC Authentication &amp; Session</p>
 
-            <!-- Body Form -->
-            <div class="card-body p-4 p-md-5">
-                <form action="/auth/login" method="POST" id="formLogin">
-                    <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
-                        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-                    <% } %>
+        <% if (query?.error === 'invalid_credentials') { %>
+            <div class="login-error" role="alert">Alamat email atau kata sandi yang Anda masukkan salah.</div>
+        <% } else if (query?.error === 'empty_fields') { %>
+            <div class="login-error" role="alert">Silakan isi alamat email dan kata sandi Anda.</div>
+        <% } %>
 
-                    <!-- Input Email -->
-                    <div class="mb-3">
-                        <label for="email" class="form-label text-secondary small fw-semibold">Alamat Email</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-dark border-secondary text-secondary">
-                                <i class="bi bi-envelope-fill"></i>
-                            </span>
-                            <input type="email" class="form-control bg-dark text-light border-secondary" id="email" name="email" value="admin@example.com" placeholder="nama@example.com" required autofocus>
-                        </div>
-                    </div>
-
-                    <!-- Input Password -->
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <label for="password" class="form-label text-secondary small fw-semibold">Kata Sandi</label>
-                            <span class="text-muted small" style="font-size: 0.75rem;">Default: password123</span>
-                        </div>
-                        <div class="input-group">
-                            <span class="input-group-text bg-dark border-secondary text-secondary">
-                                <i class="bi bi-key-fill"></i>
-                            </span>
-                            <input type="password" class="form-control bg-dark text-light border-secondary" id="password" name="password" value="password123" placeholder="Masukkan kata sandi..." required>
-                            <button class="btn btn-outline-secondary border-secondary" type="button" id="togglePassword" title="Lihat/Sembunyikan">
-                                <i class="bi bi-eye" id="toggleIcon"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Tombol Submit -->
-                    <div class="d-grid mb-3">
-                        <button type="submit" class="btn btn-primary py-2 fw-semibold shadow-sm d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-box-arrow-in-right"></i> Masuk Sekarang
-                        </button>
-                    </div>
-                </form>
-
-                <!-- Box Demo Credentials -->
-                <div class="p-3 mt-4 rounded-3 bg-dark bg-opacity-50 border border-secondary small">
-                    <div class="d-flex align-items-center gap-2 text-info fw-semibold mb-2">
-                        <i class="bi bi-info-circle-fill"></i> Akun Uji Coba (Demo):
-                    </div>
-                    <ul class="list-unstyled mb-0 text-secondary" style="font-size: 0.85rem;">
-                        <li><strong>Admin:</strong> <code class="text-light">admin@example.com</code> / <code class="text-light">password123</code></li>
-                        <li><strong>User:</strong> <code class="text-light">budi@example.com</code> / <code class="text-light">password123</code></li>
-                    </ul>
+        <form action="/auth/login" method="POST" id="formLogin">
+            <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+                <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+            <% } %>
+            <div class="login-form-group">
+                <label for="email" class="login-form-label">Alamat Email</label>
+                <div class="login-input-group">
+                    <i class="bi bi-envelope input-icon"></i>
+                    <input type="email" id="email" name="email" class="login-input" value="admin@example.com" placeholder="nama@example.com" required autofocus>
                 </div>
             </div>
-
-            <!-- Footer Card -->
-            <div class="card-footer bg-dark bg-opacity-50 border-secondary text-center py-3">
-                <a href="/users" class="text-decoration-none text-secondary small">
-                    &larr; Lanjut sebagai tamu (Lihat Modul Pengguna)
-                </a>
+            <div class="login-form-group">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label for="password" class="login-form-label mb-0">Kata Sandi</label>
+                    <span class="text-muted small">Demo: password123</span>
+                </div>
+                <div class="login-input-group">
+                    <i class="bi bi-shield-lock input-icon"></i>
+                    <input type="password" id="password" name="password" class="login-input login-input-password" value="password123" placeholder="Masukkan kata sandi" required>
+                    <button type="button" class="password-toggle-btn" id="togglePassword" aria-label="Tampilkan kata sandi"><i class="bi bi-eye" id="toggleIcon"></i></button>
+                </div>
             </div>
-        </div>
+            <div class="small text-secondary mb-4">
+                <div><strong>Admin:</strong> admin@example.com</div>
+                <div><strong>User:</strong> budi@example.com</div>
+            </div>
+            <button type="submit" class="btn-login"><span>Masuk ke Dashboard</span><i class="bi bi-arrow-right"></i></button>
+        </form>
+        <p class="login-footer-text mt-4"><a href="/users">Lihat modul pengguna</a></p>
     </div>
-</div>
+</section>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Toggle view password
         const toggleBtn = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('password');
         const toggleIcon = document.getElementById('toggleIcon');
 
         if (toggleBtn && passwordInput && toggleIcon) {
             toggleBtn.addEventListener('click', function () {
-                const isPassword = passwordInput.getAttribute('type') === 'password';
-                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-                toggleIcon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+                const showPassword = passwordInput.type === 'password';
+                passwordInput.type = showPassword ? 'text' : 'password';
+                toggleIcon.className = showPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
             });
         }
 
-        // Tangani SweetAlert2 Alert dari URL parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const error = urlParams.get('error');
-        const status = urlParams.get('status');
-
-        if (typeof Swal !== 'undefined') {
-            if (error === 'invalid_credentials') {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Login Gagal',
-                    text: 'Alamat email atau kata sandi yang Anda masukkan salah.',
-                    confirmButtonColor: '#dc3545',
-                    background: '#111827',
-                    color: '#f8fafc',
-                });
-            } else if (error === 'empty_fields') {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Form Belum Lengkap',
-                    text: 'Silakan isi alamat email dan kata sandi Anda.',
-                    confirmButtonColor: '#ffc107',
-                    background: '#111827',
-                    color: '#f8fafc',
-                });
-            } else if (status === 'logged_out') {
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'info',
-                    title: 'Anda telah berhasil keluar dari akun.',
-                    showConfirmButton: false,
-                    timer: 3500,
-                    timerProgressBar: true,
-                    background: '#111827',
-                    color: '#f8fafc',
-                });
-            }
-
-            if (error || status) {
-                // Bersihkan query string di URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
+        const status = new URLSearchParams(window.location.search).get('status');
+        if (status === 'logged_out' && typeof Swal !== 'undefined') {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Anda berhasil keluar.', showConfirmButton: false, timer: 3000, background: '#fff', color: '#0B130F' });
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
     });
 </script>

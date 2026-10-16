@@ -46,6 +46,7 @@ export class UserController {
             csrfToken: csrfToken ?? '',
             query: query,
             currentUser: user,
+            activeNav: 'users',
         });
     }
 
