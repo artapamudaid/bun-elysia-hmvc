@@ -1,6 +1,22 @@
 import db from '../../config/database';
 import { datatableQuery, type DatatableParams, type DatatableResponse } from '../../helpers/datatable_helper';
 
+export const USER_ROLES = ['admin', 'staff', 'candidate'] as const;
+export type UserRole = typeof USER_ROLES[number];
+
+export function isUserRole(value: unknown): value is UserRole {
+    return typeof value === 'string' && USER_ROLES.includes(value as UserRole);
+}
+
+export function userRoleLabel(role: string): string {
+    const labels: Record<string, string> = {
+        admin: 'Admin',
+        staff: 'Staff',
+        candidate: 'Calon Karyawan — Lolos Seleksi',
+    };
+    return labels[role] ?? 'Staff';
+}
+
 export interface User {
     id: number;
     name: string;
@@ -15,8 +31,8 @@ export class UserModel {
     // Datatable Server-Side dengan search filter, sorting, dan pagination
     static async getDatatable(params: DatatableParams = {}): Promise<DatatableResponse<User>> {
         return await datatableQuery<User>(db<User>('users'), params, {
-            searchableColumns: ['name', 'email'],
-            sortableColumns: ['id', 'name', 'email', 'created_at'],
+            searchableColumns: ['name', 'email', 'role'],
+            sortableColumns: ['id', 'name', 'email', 'role', 'created_at'],
             defaultSort: 'id',
             defaultOrder: 'asc',
             defaultPerPage: 10,
@@ -39,13 +55,13 @@ export class UserModel {
     }
 
     // Tambah user baru
-    static async create(name: string, email: string) {
-        return await db('users').insert({ name, email });
+    static async create(name: string, email: string, role: UserRole = 'staff') {
+        return await db('users').insert({ name, email, role });
     }
 
     // Update user
-    static async update(id: number, name: string, email: string) {
-        return await db('users').where({ id }).update({ name, email });
+    static async update(id: number, name: string, email: string, role: UserRole) {
+        return await db('users').where({ id }).update({ name, email, role });
     }
 
     // Hapus user

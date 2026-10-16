@@ -25,7 +25,7 @@ export class AuthApiController {
             id: user.id,
             name: user.name,
             email: user.email,
-            role: user.id === 1 ? 'admin' : 'user',
+            role: user.role ?? 'staff',
         });
 
         return ApiResponse.success({
@@ -36,7 +36,7 @@ export class AuthApiController {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.id === 1 ? 'admin' : 'user',
+                role: user.role ?? 'staff',
             }
         }, 'Login berhasil');
     }

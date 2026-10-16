@@ -19,6 +19,7 @@ export const userApiRoutes = new Elysia({ prefix: '/api/users' })
                 body: t.Object({
                     name: t.String({ minLength: 2 }),
                     email: t.String(),
+                    role: t.Optional(t.Union([t.Literal('admin'), t.Literal('staff'), t.Literal('candidate')])),
                 })
             })
             // Update user (PUT)
@@ -26,6 +27,7 @@ export const userApiRoutes = new Elysia({ prefix: '/api/users' })
                 body: t.Object({
                     name: t.String({ minLength: 2 }),
                     email: t.String(),
+                    role: t.Optional(t.Union([t.Literal('admin'), t.Literal('staff'), t.Literal('candidate')])),
                 })
             })
             // Update user (PATCH)
@@ -33,6 +35,7 @@ export const userApiRoutes = new Elysia({ prefix: '/api/users' })
                 body: t.Object({
                     name: t.String({ minLength: 2 }),
                     email: t.String(),
+                    role: t.Optional(t.Union([t.Literal('admin'), t.Literal('staff'), t.Literal('candidate')])),
                 })
             })
             // Delete user

@@ -1,4 +1,4 @@
-import { UserModel } from './user.model';
+import { isUserRole, UserModel, userRoleLabel } from './user.model';
 import { renderModuleView } from '../../config/view';
 import appConfig from '../../config/app';
 
@@ -47,6 +47,7 @@ export class UserController {
             query: query,
             currentUser: user,
             activeNav: 'users',
+            userRoleLabel,
         });
     }
 
@@ -74,8 +75,9 @@ export class UserController {
     // Menyimpan data user baru dari form (Create)
     static async store({ body, redirect }: { body: any; redirect: any }) {
         const { name, email, return_url } = body;
+        const role = isUserRole(body.role) ? body.role : 'staff';
         if (name && email) {
-            await UserModel.create(name.trim(), email.trim());
+            await UserModel.create(name.trim(), email.trim(), role);
         }
         return redirect(UserController.makeRedirectUrl(return_url, 'created'));
     }
@@ -85,7 +87,9 @@ export class UserController {
         const userId = parseInt(params.id, 10);
         const { name, email, return_url } = body;
         if (!isNaN(userId) && name && email) {
-            await UserModel.update(userId, name.trim(), email.trim());
+            const existing = await UserModel.getById(userId);
+            const role = isUserRole(body.role) ? body.role : (isUserRole(existing?.role) ? existing.role : 'staff');
+            await UserModel.update(userId, name.trim(), email.trim(), role);
         }
         return redirect(UserController.makeRedirectUrl(return_url, 'updated'));
     }

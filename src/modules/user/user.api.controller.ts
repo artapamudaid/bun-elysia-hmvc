@@ -1,4 +1,4 @@
-import { UserModel } from './user.model';
+import { isUserRole, UserModel } from './user.model';
 import { ApiResponse } from '../../helpers/response_helper';
 
 export class UserApiController {
@@ -43,6 +43,7 @@ export class UserApiController {
     // POST /api/users - Tambah pengguna baru (Dilindungi JWT Auth)
     static async store({ body, user }: any) {
         const { name, email } = body;
+        const role = isUserRole(body.role) ? body.role : 'staff';
 
         if (!name || !email) {
             return ApiResponse.validationError('Nama dan email wajib diisi');
@@ -53,7 +54,7 @@ export class UserApiController {
             return ApiResponse.error('Email sudah terdaftar, gunakan email lain', 'DUPLICATE_EMAIL', 409);
         }
 
-        const [insertId] = await UserModel.create(name.trim(), email.trim());
+        const [insertId] = await UserModel.create(name.trim(), email.trim(), role);
         const newUser = await UserModel.getById(Number(insertId));
 
         return ApiResponse.created(newUser, 'Pengguna baru berhasil dibuat');
@@ -75,6 +76,7 @@ export class UserApiController {
         if (!name || !email) {
             return ApiResponse.validationError('Nama dan email tidak boleh kosong');
         }
+        const role = isUserRole(body.role) ? body.role : (isUserRole(user.role) ? user.role : 'staff');
 
         // Cek jika email dipakai user lain
         const existingEmail = await UserModel.getByEmail(email);
@@ -82,7 +84,7 @@ export class UserApiController {
             return ApiResponse.error('Email sudah digunakan oleh pengguna lain', 'DUPLICATE_EMAIL', 409);
         }
 
-        await UserModel.update(id, name.trim(), email.trim());
+        await UserModel.update(id, name.trim(), email.trim(), role);
         const updatedUser = await UserModel.getById(id);
 
         return ApiResponse.success(updatedUser, 'Data pengguna berhasil diperbarui');

@@ -18,6 +18,7 @@ export const userRoutes = new Elysia({ prefix: '/users' })
         body: t.Object({
             name: t.String(),
             email: t.String(),
+            role: t.Optional(t.Union([t.Literal('admin'), t.Literal('staff'), t.Literal('candidate')])),
             csrf_token: t.Optional(t.String()),
             return_url: t.Optional(t.String()),
         })
@@ -28,6 +29,7 @@ export const userRoutes = new Elysia({ prefix: '/users' })
         body: t.Object({
             name: t.String(),
             email: t.String(),
+            role: t.Optional(t.Union([t.Literal('admin'), t.Literal('staff'), t.Literal('candidate')])),
             csrf_token: t.Optional(t.String()),
             return_url: t.Optional(t.String()),
         })

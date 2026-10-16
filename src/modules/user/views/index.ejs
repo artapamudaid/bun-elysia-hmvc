@@ -118,6 +118,15 @@
                         </a>
                     </th>
 
+                    <th scope="col">
+                        <a href="<%= sortUrl('role') %>" class="text-decoration-none text-reset d-flex align-items-center gap-1">
+                            <span>Role</span>
+                            <% if (datatable.sort === 'role') { %>
+                                <i class="bi bi-sort-alpha-<%= datatable.order === 'asc' ? 'down text-primary' : 'down-alt text-primary' %>"></i>
+                            <% } else { %><i class="bi bi-arrow-down-up text-muted opacity-50"></i><% } %>
+                        </a>
+                    </th>
+
                     <!-- Column: Created At -->
                     <th scope="col" style="width: 180px;">
                         <a href="<%= sortUrl('created_at') %>" class="text-decoration-none text-reset d-flex align-items-center gap-1">
@@ -137,7 +146,7 @@
             <tbody>
                 <% if (datatable.data.length === 0) { %>
                     <tr>
-                        <td colspan="5" class="text-center py-5">
+                        <td colspan="6" class="text-center py-5">
                             <div class="text-muted">
                                 <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
                                 <% if (datatable.search) { %>
@@ -161,6 +170,9 @@
                             <td>
                                 <span class="text-info font-monospace small"><%= u.email %></span>
                             </td>
+                            <td>
+                                <span class="badge rounded-pill <%= u.role === 'admin' ? 'bg-primary' : u.role === 'candidate' ? 'bg-info text-dark' : 'bg-secondary' %>"><%= userRoleLabel(u.role || 'staff') %></span>
+                            </td>
                             <td class="text-secondary small">
                                 <%= u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-' %>
                             </td>
@@ -170,6 +182,7 @@
                                         data-id="<%= u.id %>"
                                         data-name="<%= u.name %>"
                                         data-email="<%= u.email %>"
+                                        data-role="<%= u.role || 'staff' %>"
                                         title="Edit Data">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
@@ -285,6 +298,14 @@
                         <label for="create_email" class="form-label small text-secondary">Alamat Email</label>
                         <input type="email" class="form-control" id="create_email" name="email" placeholder="Contoh: budi@example.com" required>
                     </div>
+                    <div class="mb-3">
+                        <label for="create_role" class="form-label small text-secondary">Role pengguna</label>
+                        <select class="form-select" id="create_role" name="role" required>
+                            <option value="admin">Admin</option>
+                            <option value="staff" selected>Staff</option>
+                            <option value="candidate">Calon Karyawan — Lolos Seleksi</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
@@ -319,6 +340,14 @@
                     <div class="mb-3">
                         <label for="edit_email" class="form-label small text-secondary">Alamat Email</label>
                         <input type="email" class="form-control" id="edit_email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_role" class="form-label small text-secondary">Role pengguna</label>
+                        <select class="form-select" id="edit_role" name="role" required>
+                            <option value="admin">Admin</option>
+                            <option value="staff">Staff</option>
+                            <option value="candidate">Calon Karyawan — Lolos Seleksi</option>
+                        </select>
                     </div>
                 </div>
                 <div class="modal-footer border-secondary">
@@ -373,6 +402,7 @@
         const formEdit = document.getElementById('formEditUser');
         const inputEditName = document.getElementById('edit_name');
         const inputEditEmail = document.getElementById('edit_email');
+        const inputEditRole = document.getElementById('edit_role');
         const inputEditReturnUrl = document.getElementById('edit_return_url');
 
         if (modalEditElement && editButtons.length > 0) {
@@ -383,10 +413,12 @@
                     const id = this.getAttribute('data-id');
                     const name = this.getAttribute('data-name');
                     const email = this.getAttribute('data-email');
+                    const role = this.getAttribute('data-role');
 
                     formEdit.action = `/users/update/${id}`;
                     inputEditName.value = name || '';
                     inputEditEmail.value = email || '';
+                    if (inputEditRole) inputEditRole.value = role || 'staff';
                     if (inputEditReturnUrl) {
                         inputEditReturnUrl.value = window.location.pathname + window.location.search;
                     }
