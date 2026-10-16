@@ -13,9 +13,9 @@ export class AuthController {
      * Tampilkan halaman Login Web (GET /auth/login)
      */
     static async showLogin({ user, query = {}, csrfToken = '', redirect }: any) {
-        // Jika sudah login, redirect langsung ke halaman utama modul user
+        // Jika sudah login, redirect ke dashboard utama
         if (user) {
-            return redirect('/users');
+            return redirect('/dashboard');
         }
 
         return renderModuleView('auth/views/login', {
@@ -94,7 +94,7 @@ export class AuthController {
             maxAge: 60 * 60 * 24 * 7,
         });
 
-        return redirect('/users?status=login_success');
+        return redirect('/dashboard?status=login_success');
     }
 
     /**

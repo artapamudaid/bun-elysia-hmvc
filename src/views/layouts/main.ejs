@@ -41,12 +41,12 @@
     </main>
 <% } else { %>
     <aside class="sidebar-wrapper" id="sidebar">
-        <a href="/users" class="sidebar-brand"><i class="bi bi-asterisk"></i><span>Bun Elysia</span></a>
+        <a href="/dashboard" class="sidebar-brand"><i class="bi bi-asterisk"></i><span>Bun Elysia</span></a>
         <div class="flex-grow-1 overflow-y-auto">
             <div class="sidebar-menu-section">
                 <div class="sidebar-menu-title">Menu</div>
                 <ul class="sidebar-menu-list">
-                    <li class="sidebar-menu-item"><a href="/users" class="sidebar-menu-link <%= activeNav === 'users' ? 'active' : '' %>"><i class="bi bi-grid-fill"></i><span>Dashboard</span></a></li>
+                    <li class="sidebar-menu-item"><a href="/dashboard" class="sidebar-menu-link <%= activeNav === 'dashboard' ? 'active' : '' %>"><i class="bi bi-grid-fill"></i><span>Dashboard</span></a></li>
                 </ul>
             </div>
             <div class="sidebar-menu-section">
@@ -75,7 +75,7 @@
         <header class="navbar-custom">
             <div class="navbar-left">
                 <button class="sidebar-toggle-btn me-2" id="sidebar-toggle" aria-label="Buka navigasi"><i class="bi bi-list"></i></button>
-                <div class="navbar-page-label d-none d-sm-block"><%= activeNav === 'sessions' ? 'Manajemen Sesi' : activeNav === 'jobs' ? 'Rekrutmen' : activeNav === 'divisions' ? 'Manajemen Divisi' : 'Manajemen Pengguna' %></div>
+                <div class="navbar-page-label d-none d-sm-block"><%= activeNav === 'sessions' ? 'Manajemen Sesi' : activeNav === 'jobs' ? 'Rekrutmen' : activeNav === 'divisions' ? 'Manajemen Divisi' : activeNav === 'dashboard' ? 'Dashboard' : 'Manajemen Pengguna' %></div>
             </div>
             <div class="navbar-actions">
                 <% if (currentUser) { %>

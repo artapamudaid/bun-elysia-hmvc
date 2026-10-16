@@ -46,9 +46,9 @@ const app = new Elysia()
     // After-handle log (response time) — dipasang di app bukan plugin (Elysia 1.4.x)
     .onAfterHandle(logAfterHandle)
 
-    // Route default / -> redirect ke /users
+    // Route default / -> dashboard utama
     .get('/', ({ redirect }) => {
-        return redirect('/users');
+        return redirect('/dashboard');
     })
 
     // Global error handler (mirip CI3 show_error / show_404)
